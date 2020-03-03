@@ -97,14 +97,13 @@ class Controller2D(object):
         self.vars.create_var('t_previous', 0.0)
         self.vars.create_var('int_acc', 0)
         self.vars.create_var('prev_error', 0)
+        self.vars.create_var('prev_heading', 0)
 
         # Skip the first frame to store previous values properly
         if self._start_control_loop:
 
             ######################################################
-            ######################################################
             # MODULE 7: IMPLEMENTATION OF LONGITUDINAL CONTROLLER HERE
-            ######################################################
             ######################################################
 
             kp = 1.4
@@ -120,9 +119,64 @@ class Controller2D(object):
             ######################################################
             # MODULE 7: IMPLEMENTATION OF LATERAL CONTROLLER HERE
             ######################################################
+            front_distance = 1.5
+            L1 = front_distance*2
 
-            # Change the steer output with the lateral controller. 
-            steer_output    = 0
+            Kdd = 1.2
+
+            alpha = np.arctan2(waypoints[len(waypoints)-1][1]-y-front_distance*np.sin(yaw),
+                               waypoints[len(waypoints)-1][0]-x-front_distance*np.cos(yaw))
+            alpha_input = alpha - yaw
+            print('my alpha', alpha_input)
+            steer_output = np.arctan(2*L1*np.sin(alpha_input)/(Kdd*v))
+            print('my steer', steer_output)
+
+            K_dd = 1 # Look ahead gain
+            L = 3.0 # Distance between rear and front axe
+
+
+            track_point_x = waypoints[len(self._waypoints) - 1][0]
+            track_point_y = waypoints[len(self._waypoints) - 1][1]
+
+            rear_x = x - L / 2 * np.cos(yaw)
+            rear_y = y - L / 2 * np.sin(yaw)
+
+            alpha = np.arctan2((track_point_y - rear_y), (track_point_x - rear_x)) - yaw
+            print('his alpha', alpha)
+
+            # Change the steer output with the lateral controller.
+            steer_output1 = np.arctan((2 * L * np.sin(alpha)) / (K_dd * v))
+            print('his steer', steer_output1)
+
+            # error_gain = 0.2
+            # softening_constant = 15
+            # steer_output = 0
+            # #
+            # desired_heading = np.arctan2(waypoints[len(waypoints)-1][1]-waypoints[0][1],
+            #                              waypoints[len(waypoints)-1][0]-waypoints[0][0])
+            # prev_heading = np.arctan2(self._current_y, self._current_x)
+            # current_heading = desired_heading - yaw
+            # current_heading = (-2*np.pi + current_heading) if current_heading > np.pi else current_heading
+            # current_heading = (2*np.pi + current_heading) if current_heading < - np.pi else current_heading
+            #
+            # crosstrack_error = np.sqrt(np.min((x- np.array(waypoints)[:, 0])**2 + (y- np.array(waypoints)[:, 1])**2))
+            # # print('my crosstrack', crosstrack_error1)
+            #
+            # # yaw_error = desired_heading - np.arctan2(y-waypoints[-1][1],
+            # #                                          x - waypoints[-1][0])
+            # # yaw_error = (-2*np.pi+yaw_error) if yaw_error > np.pi else yaw_error
+            # # yaw_error = (2*np.pi+yaw_error) if yaw_error < -np.pi else yaw_error
+            # # crosstrack_error = crosstrack_error if yaw_error > 0 else -crosstrack_error
+            #
+            # steer = np.arctan(error_gain*crosstrack_error/(softening_constant+v))
+            # print('Steer', steer)
+            # steer = (-2*np.pi + steer) if steer > np.pi else steer
+            # steer = (2*np.pi + steer) if steer < - np.pi else steer
+            # if steer > 1.22:
+            #     steer = 1.22
+            # if steer < -1.22:
+            #     steer = -1.22
+            # steer_output = steer
 
             ######################################################
             # SET CONTROLS OUTPUT
@@ -139,3 +193,4 @@ class Controller2D(object):
         self.vars.t_previous = t
         self.vars.int_acc = integral
         self.vars.prev_error = curr_error
+
